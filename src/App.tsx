@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useAuthenticator } from '@aws-amplify/ui-react';
-import type { Schema } from "../amplify/data/resource";
-import { generateClient } from "aws-amplify/data";
 import { uploadData, list } from 'aws-amplify/storage';
 import './App.css';
 
