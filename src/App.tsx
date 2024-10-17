@@ -1,48 +1,110 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
+import { uploadData, list } from 'aws-amplify/storage';
+import './App.css';
 
 const client = generateClient<Schema>();
 
 function App() {
-  const { signOut } = useAuthenticator();
-  const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
+  const { signOut, user } = useAuthenticator();
+  const [files, setFiles] = useState<{ [key: string]: string[] }>({
+    resumesBucket: [],
+    profilesBucket: [],
+    jobReqsBucket: []
+  });
 
   useEffect(() => {
-    client.models.Todo.observeQuery().subscribe({
-      next: (data) => setTodos([...data.items]),
-    });
+    listFiles();
   }, []);
 
-  function createTodo() {
-    client.models.Todo.create({ content: window.prompt("Todo content") });
+  async function listFiles() {
+    try {
+      const resumesFiles = await list({ options: { bucket: 'resumesBucket' } });
+      const profilesFiles = await list({ options: { bucket: 'profilesBucket' } });
+      const jobReqsFiles = await list({ options: { bucket: 'jobReqsBucket' } });
+
+      setFiles({
+        resumesBucket: resumesFiles.items.map(item => item.key),
+        profilesBucket: profilesFiles.items.map(item => item.key),
+        jobReqsBucket: jobReqsFiles.items.map(item => item.key)
+      });
+    } catch (error) {
+      console.error('Error listing files:', error);
+    }
   }
-  
-  function deleteTodo(id: string) {
-    client.models.Todo.delete({ id })
+
+  async function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>, bucketName: string) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      const uploadPromises = Array.from(files).map(file => 
+        uploadData({
+          key: `private/${file.name}`,
+          data: file,
+          options: {
+            bucket: bucketName,
+            contentType: file.type
+          }
+        }).result
+      );
+
+      await Promise.all(uploadPromises);
+      listFiles();
+    } catch (error) {
+      console.error('Error uploading files:', error);
+    }
   }
+
   return (
-    <main>
-      <h1>My todos</h1>
-      <button onClick={createTodo}>+ new</button>
-      <ul>
-        {todos.map((todo) => ( <li 
-          onClick={() => deleteTodo(todo.id)}
-          key={todo.id}>
-          {todo.content}
-          </li>
-        ))}
-      </ul>
-      <div>
-        🥳 App successfully hosted. Try creating a new todo.
-        <br />
-        <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
-          Review next step of this tutorial.
-        </a>
-      </div>
-      <button onClick={signOut}>Sign out</button>
-    </main>
+    <div className="app">
+      <header className="app-header">
+        <h1>Neural Solutions Recruiting</h1>
+        <div className="user-info">
+          <span>Welcome, {user?.username}</span>
+          <button onClick={signOut}>Sign out</button>
+        </div>
+      </header>
+      <main className="app-main">
+        <section className="upload-section">
+          <h2>File Management</h2>
+          <div className="bucket-container">
+            <div className="bucket">
+              <h3>Resumes</h3>
+              <input type="file" multiple onChange={(e) => handleFileUpload(e, 'resumesBucket')} />
+              <ul>
+                {files.resumesBucket.map((file) => (
+                  <li key={file}>{file}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="bucket">
+              <h3>Profiles</h3>
+              <input type="file" multiple onChange={(e) => handleFileUpload(e, 'profilesBucket')} />
+              <ul>
+                {files.profilesBucket.map((file) => (
+                  <li key={file}>{file}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="bucket">
+              <h3>Job Requirements</h3>
+              <input type="file" multiple onChange={(e) => handleFileUpload(e, 'jobReqsBucket')} />
+              <ul>
+                {files.jobReqsBucket.map((file) => (
+                  <li key={file}>{file}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer className="app-footer">
+        <p>&copy; 2023 Neural Solutions Recruiting. All rights reserved.</p>
+      </footer>
+    </div>
   );
 }
 
