@@ -5,7 +5,7 @@ import { generateClient } from "aws-amplify/data";
 import { uploadData, list } from 'aws-amplify/storage';
 import './App.css';
 
-const client = generateClient<Schema>();
+//const client = generateClient<Schema>();
 
 function App() {
   const { signOut, user } = useAuthenticator();
