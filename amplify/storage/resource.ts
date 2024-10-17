@@ -4,8 +4,8 @@ export const resumesBucket = defineStorage({
     name: 'resumesBucket',
     isDefault: true, // identify your default storage bucket (required)
     access: (allow) => ({
-      'private/{entity_id}/*': [
-        allow.entity('identity').to(['read', 'write', 'delete'])
+      '*/*': [
+        allow.authenticated.to(['read', 'write', 'delete'])
       ]
     })
   });
@@ -13,8 +13,8 @@ export const resumesBucket = defineStorage({
   export const profilesBucket = defineStorage({
     name: 'profilesBucket',
     access: (allow) => ({
-      'private/{entity_id}/*': [
-        allow.entity('identity').to(['read', 'write', 'delete'])
+      '*/*': [
+        allow.authenticated.to(['read', 'write', 'delete'])
       ]
     })
   });
@@ -22,8 +22,8 @@ export const resumesBucket = defineStorage({
   export const jobReqsBucket = defineStorage({
     name: 'jobReqsBucket',
     access: (allow) => ({
-      'private/{entity_id}/*': [
-        allow.entity('identity').to(['read', 'write', 'delete'])
+      '*/*': [
+        allow.authenticated.to(['read', 'write', 'delete'])
       ]
     })
   });
